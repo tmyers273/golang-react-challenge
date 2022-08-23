@@ -1,5 +1,11 @@
 package react
 
+import (
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
+)
+
 var _ InputCell = &Input{}
 
 type Input struct {
@@ -31,17 +37,50 @@ func (i *Input) SetValue(i2 int) {
 
 	i.value = i2
 
-	if m, ok := i.sheet.deps[i]; ok {
+	fireDeps(i.sheet, i)
+}
+
+func hash(in []Cell) string {
+	out := make([]byte, len(in)*8)
+	for i := 0; i < len(in); i += 8 {
+		binary.LittleEndian.PutUint64(out[i:i+8], uint64(in[i].GetId()))
+	}
+
+	hashed := md5.Sum(out)
+	return hex.EncodeToString(hashed[:])
+}
+
+func fireDeps(sheet *Sheet, c Cell) {
+	// First "land" all the new values
+	
+	var old int
+	changes := make(map[string]*Compute)
+	if m, ok := sheet.deps[c]; ok {
 		for k := 0; k < len(m); k++ {
 			if m[k].f1 != nil {
-				for i, target := range m[k].targets {
-					target.SetValue(m[k].f1(m[k].deps[i].Value()))
+				old = m[k].target.value
+				m[k].target.value = m[k].f1(m[k].f1Deps[0].Value())
+
+				if old != m[k].target.value {
+					changes[hash(m[k].f1Deps)] = m[k].target
 				}
 			} else {
-				for i, target := range m[k].targets {
-					target.SetValue(m[k].f2(m[k].f2Deps[i][0].Value(), m[k].f2Deps[i][1].Value()))
+				old = m[k].target.value
+				m[k].target.value = m[k].f2(m[k].f2Deps[0].Value(), m[k].f2Deps[1].Value())
+				if old != m[k].target.value {
+					changes[hash(m[k].f1Deps)] = m[k].target
 				}
 			}
+		}
+	}
+
+	// Then fire deps for anything that has changed
+	for _, c := range changes {
+
+		fireDeps(sheet, c)
+
+		for _, cb := range c.callbacks {
+			cb.f(c.value)
 		}
 	}
 }

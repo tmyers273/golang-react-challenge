@@ -1,7 +1,6 @@
 package react
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -28,22 +27,22 @@ func (c *Compute) SetValue(i int) {
 
 	c.value = i
 
-	if m, ok := c.sheet.deps[c]; ok {
-		for k := 0; k < len(m); k++ {
-			if m[k].f1 != nil {
-				for i, target := range m[k].targets {
-					target.SetValue(m[k].f1(m[k].deps[i].Value()))
-				}
-			} else {
-				for i, target := range m[k].targets {
-					target.SetValue(m[k].f2(m[k].f2Deps[i][0].Value(), m[k].f2Deps[i][1].Value()))
-				}
-			}
-		}
-	}
+	c.fireDeps()
 
 	for _, cb := range c.callbacks {
 		cb.f(c.value)
+	}
+}
+
+func (c *Compute) fireDeps() {
+	if m, ok := c.sheet.deps[c]; ok {
+		for k := 0; k < len(m); k++ {
+			if m[k].f1 != nil {
+				m[k].target.SetValue(m[k].f1(m[k].f1Deps[0].Value()))
+			} else {
+				m[k].target.SetValue(m[k].f2(m[k].f2Deps[0].Value(), m[k].f2Deps[1].Value()))
+			}
+		}
 	}
 }
 
@@ -120,7 +119,5 @@ type CallbackRemover struct {
 }
 
 func (c *CallbackRemover) Cancel() {
-	fmt.Println("Canceling callback")
 	c.c.remove(c.id)
-	fmt.Println("Done canceling callback")
 }

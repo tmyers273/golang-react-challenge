@@ -226,13 +226,17 @@ func TestRemoveIdempotence(t *testing.T) {
 func TestOnlyCallOnceOnMultipleDepChanges(t *testing.T) {
 	r := New()
 	i := r.CreateInput(1)
+
 	c1 := r.CreateCompute1(i, func(v int) int { return v + 1 })
 	c2 := r.CreateCompute1(i, func(v int) int { return v - 1 })
 	c3 := r.CreateCompute1(c2, func(v int) int { return v - 1 })
 	c4 := r.CreateCompute2(c1, c3, func(v1, v3 int) int { return v1 * v3 })
+
 	changed4 := 0
 	c4.AddCallback(func(int) { changed4++ })
 	i.SetValue(3)
+
+	assert.Equal(t, 1, changed4)
 	if changed4 < 1 {
 		t.Fatalf("callback function was not called")
 	} else if changed4 > 1 {
@@ -247,10 +251,16 @@ func TestNoCallOnDepChangesResultingInNoChange(t *testing.T) {
 	minus1 := r.CreateCompute1(inp, func(v int) int { return v - 1 })
 	output := r.CreateCompute2(plus1, minus1, func(v1, v2 int) int { return v1 - v2 })
 
+	spew.Dump(output.Value())
+
 	timesCalled := 0
-	output.AddCallback(func(int) { timesCalled++ })
+	output.AddCallback(func(i int) {
+		fmt.Printf("callback called with %d\n", i)
+		timesCalled++
+	})
 
 	inp.SetValue(5)
+	assert.Equal(t, 0, timesCalled)
 	if timesCalled != 0 {
 		t.Fatalf("callback function called even though computed value didn't change")
 	}

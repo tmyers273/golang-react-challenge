@@ -27,11 +27,11 @@ type Update struct {
 }
 
 type dependencies struct {
-	f1      func(int) int
-	f2      func(int, int) int
-	targets []Cell
-	deps    []Cell
-	f2Deps  [][]Cell
+	f1     func(int) int
+	f2     func(int, int) int
+	target *Compute
+	f1Deps []Cell
+	f2Deps []Cell
 }
 
 func (s *Sheet) CreateInput(i int) InputCell {
@@ -53,9 +53,9 @@ func (s *Sheet) CreateCompute1(cell Cell, f func(int) int) ComputeCell {
 	}
 
 	s.deps[cell] = append(s.deps[cell], dependencies{
-		f1:      f,
-		targets: []Cell{compute},
-		deps:    []Cell{cell},
+		f1:     f,
+		target: compute,
+		f1Deps: []Cell{cell},
 	})
 
 	go compute.listen()
@@ -76,8 +76,8 @@ func (s *Sheet) CreateCompute2(cell Cell, cell2 Cell, f func(int, int) int) Comp
 		cells:  []Cell{cell, cell2},
 	}
 
-	s.deps[cell] = append(s.deps[cell], dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}})
-	s.deps[cell2] = append(s.deps[cell2], dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}})
+	s.deps[cell] = append(s.deps[cell], dependencies{f2: f, target: compute, f2Deps: []Cell{cell, cell2}})
+	s.deps[cell2] = append(s.deps[cell2], dependencies{f2: f, target: compute, f2Deps: []Cell{cell, cell2}})
 
 	go compute.listen()
 
