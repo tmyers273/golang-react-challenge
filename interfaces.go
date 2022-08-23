@@ -10,15 +10,13 @@ type Reactor interface {
 
 type Cell interface {
 	Value() int
-	GetId() int                 // new
-	RegisterListener() chan int // new
-	SetValue(int)               // new
+	GetId() int // new
 }
 
 type InputCell interface {
 	Cell
 
-	//SetValue(int) // uncomment?
+	SetValue(int)
 }
 
 type ComputeCell interface {

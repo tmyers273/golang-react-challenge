@@ -2,7 +2,6 @@ package react
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"runtime"
 	"testing"
@@ -193,13 +192,10 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d should be called 1 time, was called %d times", i+1, numCallbacks, calls[i])
 		}
-		fmt.Printf("cancelling callback %d\n", i)
 		cancelers[i].Cancel()
 	}
 
-	fmt.Printf("setting value to 3\n")
 	inp.SetValue(3)
-	spew.Dump(calls)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d was called after it was removed", i+1, numCallbacks)
@@ -250,8 +246,6 @@ func TestNoCallOnDepChangesResultingInNoChange(t *testing.T) {
 	plus1 := r.CreateCompute1(inp, func(v int) int { return v + 1 })
 	minus1 := r.CreateCompute1(inp, func(v int) int { return v - 1 })
 	output := r.CreateCompute2(plus1, minus1, func(v1, v2 int) int { return v1 - v2 })
-
-	spew.Dump(output.Value())
 
 	timesCalled := 0
 	output.AddCallback(func(i int) {

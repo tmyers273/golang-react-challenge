@@ -16,12 +16,6 @@ type Input struct {
 	sheet     *Sheet
 }
 
-func (i *Input) RegisterListener() chan int {
-	ch := make(chan int)
-	i.listeners = append(i.listeners, ch)
-	return ch
-}
-
 func (i *Input) GetId() int {
 	return i.id
 }

@@ -42,14 +42,11 @@ func (s *Sheet) CreateInput(i int) InputCell {
 }
 
 func (s *Sheet) CreateCompute1(cell Cell, f func(int) int) ComputeCell {
-	c1 := cell.RegisterListener()
-
 	compute := &Compute{
-		sheet:  s,
-		value:  f(cell.Value()),
-		inputs: []chan int{c1},
-		f1:     f,
-		cells:  []Cell{cell},
+		sheet: s,
+		value: f(cell.Value()),
+		f1:    f,
+		cells: []Cell{cell},
 	}
 
 	s.deps[cell] = append(s.deps[cell], dependencies{
@@ -63,15 +60,11 @@ func (s *Sheet) CreateCompute1(cell Cell, f func(int) int) ComputeCell {
 }
 
 func (s *Sheet) CreateCompute2(cell Cell, cell2 Cell, f func(int, int) int) ComputeCell {
-	c1 := cell.RegisterListener()
-	c2 := cell2.RegisterListener()
-
 	compute := &Compute{
-		sheet:  s,
-		value:  f(cell.Value(), cell2.Value()),
-		inputs: []chan int{c1, c2},
-		f2:     f,
-		cells:  []Cell{cell, cell2},
+		sheet: s,
+		value: f(cell.Value(), cell2.Value()),
+		f2:    f,
+		cells: []Cell{cell, cell2},
 	}
 
 	s.deps[cell] = append(s.deps[cell], dependencies{f2: f, target: compute, f2Deps: []Cell{cell, cell2}})

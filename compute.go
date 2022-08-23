@@ -38,12 +38,6 @@ func (c *Compute) Value() int {
 	return c.value
 }
 
-func (c *Compute) RegisterListener() chan int {
-	ch := make(chan int)
-	c.listeners = append(c.listeners, ch)
-	return ch
-}
-
 func (c *Compute) AddCallback(f func(int)) Canceler {
 	c.mu.Lock()
 	c.callbacks = append(c.callbacks, Callback{
