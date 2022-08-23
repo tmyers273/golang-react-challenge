@@ -58,8 +58,6 @@ func (s *Sheet) CreateCompute1(cell Cell, f func(int) int) ComputeCell {
 		f1Deps: []Cell{cell},
 	})
 
-	go compute.listen()
-
 	s.ComputeCells = append(s.ComputeCells, compute)
 	return compute
 }
@@ -78,8 +76,6 @@ func (s *Sheet) CreateCompute2(cell Cell, cell2 Cell, f func(int, int) int) Comp
 
 	s.deps[cell] = append(s.deps[cell], dependencies{f2: f, target: compute, f2Deps: []Cell{cell, cell2}})
 	s.deps[cell2] = append(s.deps[cell2], dependencies{f2: f, target: compute, f2Deps: []Cell{cell, cell2}})
-
-	go compute.listen()
 
 	s.ComputeCells = append(s.ComputeCells, compute)
 	return compute

@@ -52,7 +52,6 @@ func hash(in []Cell) string {
 
 func fireDeps(sheet *Sheet, c Cell) {
 	// First "land" all the new values
-	
 	var old int
 	changes := make(map[string]*Compute)
 	if m, ok := sheet.deps[c]; ok {

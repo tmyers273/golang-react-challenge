@@ -27,43 +27,7 @@ func (c *Compute) SetValue(i int) {
 
 	c.value = i
 
-	c.fireDeps()
-
-	for _, cb := range c.callbacks {
-		cb.f(c.value)
-	}
-}
-
-func (c *Compute) fireDeps() {
-	if m, ok := c.sheet.deps[c]; ok {
-		for k := 0; k < len(m); k++ {
-			if m[k].f1 != nil {
-				m[k].target.SetValue(m[k].f1(m[k].f1Deps[0].Value()))
-			} else {
-				m[k].target.SetValue(m[k].f2(m[k].f2Deps[0].Value(), m[k].f2Deps[1].Value()))
-			}
-		}
-	}
-}
-
-func (c *Compute) listen() {
-	if c.f1 != nil {
-		for {
-			select {
-			case _ = <-c.inputs[0]:
-				c.SetValue(c.f1(c.cells[0].Value()))
-			}
-		}
-	} else if c.f2 != nil {
-		for {
-			select {
-			case _ = <-c.inputs[0]:
-				c.SetValue(c.f2(c.cells[0].Value(), c.cells[1].Value()))
-			case _ = <-c.inputs[1]:
-				c.SetValue(c.f2(c.cells[0].Value(), c.cells[1].Value()))
-			}
-		}
-	}
+	fireDeps(c.sheet, c)
 }
 
 func (c *Compute) GetId() int {
