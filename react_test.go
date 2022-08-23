@@ -3,8 +3,8 @@ package react
 import (
 	"runtime"
 	"testing"
+	"time"
 )
-
 
 var _ Reactor = New()
 
@@ -21,6 +21,7 @@ func TestSetInput(t *testing.T) {
 	i := r.CreateInput(1)
 	assertCellValue(t, i, 1, "i.Value() doesn't match initial value")
 	i.SetValue(2)
+	time.Sleep(100 * time.Millisecond)
 	assertCellValue(t, i, 2, "i.Value() doesn't match changed value")
 }
 
@@ -61,7 +62,7 @@ func TestCompute1Chain(t *testing.T) {
 	inp := r.CreateInput(1)
 	var c Cell = inp
 	for i := 2; i <= 8; i++ {
-						digitToAdd := i
+		digitToAdd := i
 		c = r.CreateCompute1(c, func(v int) int { return v*10 + digitToAdd })
 	}
 	assertCellValue(t, c, 12345678, "c.Value() isn't properly computed based on initial input cell value")
@@ -175,7 +176,7 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 	calls := make([]int, numCallbacks)
 	cancelers := make([]Canceler, numCallbacks)
 	for i := 0; i < numCallbacks; i++ {
-				i := i
+		i := i
 		cancelers[i] = c.AddCallback(func(v int) { calls[i]++ })
 	}
 
@@ -233,7 +234,7 @@ func TestNoCallOnDepChangesResultingInNoChange(t *testing.T) {
 	inp := r.CreateInput(0)
 	plus1 := r.CreateCompute1(inp, func(v int) int { return v + 1 })
 	minus1 := r.CreateCompute1(inp, func(v int) int { return v - 1 })
-		output := r.CreateCompute2(plus1, minus1, func(v1, v2 int) int { return v1 - v2 })
+	output := r.CreateCompute2(plus1, minus1, func(v1, v2 int) int { return v1 - v2 })
 
 	timesCalled := 0
 	output.AddCallback(func(int) { timesCalled++ })
