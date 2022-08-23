@@ -1,6 +1,7 @@
 package react
 
 import (
+	"github.com/stretchr/testify/assert"
 	"runtime"
 	"testing"
 	"time"
@@ -159,14 +160,20 @@ func TestCallbackAddRemove(t *testing.T) {
 		observed2 = append(observed2, v)
 	})
 	i.SetValue(2)
+
+	time.Sleep(10 * time.Millisecond)
+
 	if len(observed1) != 1 || observed1[0] != 3 {
+		assert.Equal(t, []int{3}, observed1)
 		t.Fatalf("observed1 not properly called")
 	}
 	if len(observed2) != 1 || observed2[0] != 3 {
+		assert.Equal(t, []int{3}, observed2)
 		t.Fatalf("observed2 not properly called")
 	}
 	cb1.Cancel()
 	i.SetValue(3)
+	time.Sleep(10 * time.Millisecond)
 	if len(observed1) != 1 {
 		t.Fatalf("observed1 called after removal")
 	}

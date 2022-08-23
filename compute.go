@@ -1,5 +1,9 @@
 package react
 
+import (
+	"sync"
+)
+
 var _ ComputeCell = &Compute{}
 
 type Compute struct {
@@ -10,7 +14,8 @@ type Compute struct {
 	inputs    []chan int
 	listeners []chan int
 	cells     []Cell
-	callback  func(int)
+	callbacks []func(int)
+	mu        sync.Mutex
 }
 
 func (c *Compute) SetValue(i int) {
@@ -24,8 +29,8 @@ func (c *Compute) SetValue(i int) {
 		ch <- c.value
 	}
 
-	if c.callback != nil {
-		c.callback(c.value)
+	for _, f := range c.callbacks {
+		f(c.value)
 	}
 }
 
@@ -64,11 +69,26 @@ func (c *Compute) RegisterListener() chan int {
 }
 
 func (c *Compute) AddCallback(f func(int)) Canceler {
-	c.callback = f
+	c.callbacks = append(c.callbacks, f)
 
-	return &DummyCanceler{}
+	return NewCallbackRemover(len(c.callbacks)-1, c)
 }
 
-type DummyCanceler struct{}
+func (c *Compute) remove(index int) {
+	c.mu.Lock()
+	c.callbacks = append(c.callbacks[:index], c.callbacks[index+1:]...)
+	c.mu.Unlock()
+}
 
-func (c *DummyCanceler) Cancel() {}
+func NewCallbackRemover(index int, c *Compute) Canceler {
+	return &CallbackRemover{index: index, c: c}
+}
+
+type CallbackRemover struct {
+	index int
+	c     *Compute
+}
+
+func (c *CallbackRemover) Cancel() {
+	c.c.remove(c.index)
+}
