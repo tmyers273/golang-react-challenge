@@ -197,6 +197,7 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 	}
 
 	inp.SetValue(2)
+	time.Sleep(10 * time.Millisecond)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d should be called 1 time, was called %d times", i+1, numCallbacks, calls[i])
@@ -205,6 +206,7 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 	}
 
 	inp.SetValue(3)
+	time.Sleep(10 * time.Millisecond)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d was called after it was removed", i+1, numCallbacks)

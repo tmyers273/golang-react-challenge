@@ -7,15 +7,16 @@ import (
 var _ ComputeCell = &Compute{}
 
 type Compute struct {
-	id        int
-	value     int
-	f1        func(int) int
-	f2        func(int, int) int
-	inputs    []chan int
-	listeners []chan int
-	cells     []Cell
-	callbacks []func(int)
-	mu        sync.Mutex
+	id         int
+	value      int
+	f1         func(int) int
+	f2         func(int, int) int
+	inputs     []chan int
+	listeners  []chan int
+	cells      []Cell
+	callbacks  []Callback
+	mu         sync.Mutex
+	callbackId int
 }
 
 func (c *Compute) SetValue(i int) {
@@ -30,7 +31,7 @@ func (c *Compute) SetValue(i int) {
 	}
 
 	for _, f := range c.callbacks {
-		f(c.value)
+		f.f(c.value)
 	}
 }
 
@@ -69,26 +70,40 @@ func (c *Compute) RegisterListener() chan int {
 }
 
 func (c *Compute) AddCallback(f func(int)) Canceler {
-	c.callbacks = append(c.callbacks, f)
+	c.callbacks = append(c.callbacks, Callback{
+		f:  f,
+		id: c.callbackId,
+	})
+	c.callbackId++
 
 	return NewCallbackRemover(len(c.callbacks)-1, c)
 }
 
-func (c *Compute) remove(index int) {
+func (c *Compute) remove(id int) {
 	c.mu.Lock()
-	c.callbacks = append(c.callbacks[:index], c.callbacks[index+1:]...)
+	for i := 0; i < len(c.callbacks)-1; i++ {
+		if c.callbacks[i].id == id {
+			c.callbacks = append(c.callbacks[:i], c.callbacks[i+1:]...)
+			break
+		}
+	}
 	c.mu.Unlock()
 }
 
-func NewCallbackRemover(index int, c *Compute) Canceler {
-	return &CallbackRemover{index: index, c: c}
+type Callback struct {
+	id int
+	f  func(int)
+}
+
+func NewCallbackRemover(id int, c *Compute) Canceler {
+	return &CallbackRemover{id: id, c: c}
 }
 
 type CallbackRemover struct {
-	index int
-	c     *Compute
+	id int
+	c  *Compute
 }
 
 func (c *CallbackRemover) Cancel() {
-	c.c.remove(c.index)
+	c.c.remove(c.id)
 }
