@@ -1,5 +1,7 @@
 package react
 
+import "fmt"
+
 var _ InputCell = &Input{}
 
 type Input struct {
@@ -7,6 +9,13 @@ type Input struct {
 	value       int
 	ch          chan<- Update
 	subscribers []*Compute
+	listeners   []chan int
+}
+
+func (i *Input) RegisterListener() chan int {
+	ch := make(chan int)
+	i.listeners = append(i.listeners, ch)
+	return ch
 }
 
 func (i *Input) GetId() int {
@@ -24,8 +33,13 @@ func (i *Input) Value() int {
 func (i *Input) SetValue(i2 int) {
 	i.value = i2
 
-	i.ch <- Update{
-		id:    i.id,
-		value: i.value,
+	fmt.Printf("pushing %d on %d listeners\n", i.value, len(i.listeners))
+	for _, c := range i.listeners {
+		c <- i.value
 	}
+	fmt.Printf("done pushing")
+	//i.ch <- Update{
+	//	id:    i.id,
+	//	value: i.value,
+	//}
 }

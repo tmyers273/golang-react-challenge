@@ -11,6 +11,7 @@ type Reactor interface {
 type Cell interface {
 	Value() int
 	GetId() int // new
+	RegisterListener() chan int
 }
 
 type InputCell interface {
