@@ -31,7 +31,15 @@ func (i *Input) SetValue(i2 int) {
 
 	i.value = i2
 
-	for _, c := range i.listeners {
-		c <- i.value
+	if m, ok := i.sheet.deps[i]; ok {
+		if m.f1 != nil {
+			for i, target := range m.targets {
+				target.SetValue(m.f1(m.deps[i].Value()))
+			}
+		} else {
+			for i, target := range m.targets {
+				target.SetValue(m.f2(m.f2Deps[i][0].Value(), m.f2Deps[i][1].Value()))
+			}
+		}
 	}
 }

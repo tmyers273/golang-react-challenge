@@ -18,6 +18,7 @@ type Compute struct {
 	callbacks  []Callback
 	mu         sync.Mutex
 	callbackId int
+	sheet      *Sheet
 }
 
 func (c *Compute) SetValue(i int) {
@@ -27,12 +28,16 @@ func (c *Compute) SetValue(i int) {
 
 	c.value = i
 
-	for _, ch := range c.listeners {
-		ch <- c.value
-	}
-
-	for _, f := range c.callbacks {
-		f.f(c.value)
+	if m, ok := c.sheet.deps[c]; ok {
+		if m.f1 != nil {
+			for i, target := range m.targets {
+				target.SetValue(m.f1(m.deps[i].Value()))
+			}
+		} else {
+			for i, target := range m.targets {
+				target.SetValue(m.f2(m.f2Deps[i][0].Value(), m.f2Deps[i][1].Value()))
+			}
+		}
 	}
 }
 
