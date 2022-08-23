@@ -1,6 +1,8 @@
 package react
 
 import (
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"runtime"
 	"testing"
@@ -32,7 +34,7 @@ func TestBasicCompute1(t *testing.T) {
 	c := r.CreateCompute1(i, func(v int) int { return v + 1 })
 	assertCellValue(t, c, 2, "c.Value() isn't properly computed based on initial input cell value")
 	i.SetValue(2)
-	time.Sleep(10 * time.Millisecond) // @todo remove?
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 3, "c.Value() isn't properly computed based on changed input cell value")
 }
 
@@ -197,16 +199,19 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 	}
 
 	inp.SetValue(2)
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d should be called 1 time, was called %d times", i+1, numCallbacks, calls[i])
 		}
+		fmt.Printf("cancelling callback %d\n", i)
 		cancelers[i].Cancel()
 	}
 
+	fmt.Printf("setting value to 3\n")
 	inp.SetValue(3)
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
+	spew.Dump(calls)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d was called after it was removed", i+1, numCallbacks)

@@ -1,6 +1,7 @@
 package react
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -70,24 +71,27 @@ func (c *Compute) RegisterListener() chan int {
 }
 
 func (c *Compute) AddCallback(f func(int)) Canceler {
+	c.mu.Lock()
 	c.callbacks = append(c.callbacks, Callback{
 		f:  f,
 		id: c.callbackId,
 	})
 	c.callbackId++
+	c.mu.Unlock()
 
 	return NewCallbackRemover(len(c.callbacks)-1, c)
 }
 
 func (c *Compute) remove(id int) {
 	c.mu.Lock()
-	for i := 0; i < len(c.callbacks)-1; i++ {
+	defer c.mu.Unlock()
+
+	for i := 0; i < len(c.callbacks); i++ {
 		if c.callbacks[i].id == id {
 			c.callbacks = append(c.callbacks[:i], c.callbacks[i+1:]...)
-			break
+			return
 		}
 	}
-	c.mu.Unlock()
 }
 
 type Callback struct {
@@ -105,5 +109,7 @@ type CallbackRemover struct {
 }
 
 func (c *CallbackRemover) Cancel() {
+	fmt.Println("Canceling callback")
 	c.c.remove(c.id)
+	fmt.Println("Done canceling callback")
 }
