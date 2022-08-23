@@ -10,16 +10,15 @@ type Reactor interface {
 
 type Cell interface {
 	Value() int
-	GetId() int // new
-	RegisterListener() chan int
+	GetId() int                 // new
+	RegisterListener() chan int // new
+	SetValue(int)               // new
 }
 
 type InputCell interface {
 	Cell
 
-	SetValue(int)
-
-	RegisterSubscriber(c *Compute)
+	//SetValue(int) // uncomment?
 }
 
 type ComputeCell interface {

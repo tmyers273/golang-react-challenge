@@ -31,7 +31,7 @@ func TestBasicCompute1(t *testing.T) {
 	c := r.CreateCompute1(i, func(v int) int { return v + 1 })
 	assertCellValue(t, c, 2, "c.Value() isn't properly computed based on initial input cell value")
 	i.SetValue(2)
-	time.Sleep(10 * time.Millisecond) // @todo remove
+	time.Sleep(10 * time.Millisecond) // @todo remove?
 	assertCellValue(t, c, 3, "c.Value() isn't properly computed based on changed input cell value")
 }
 
@@ -42,8 +42,10 @@ func TestBasicCompute2(t *testing.T) {
 	c := r.CreateCompute2(i1, i2, func(v1, v2 int) int { return v1 | v2 })
 	assertCellValue(t, c, 3, "c.Value() isn't properly computed based on initial input cell values")
 	i1.SetValue(4)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 6, "c.Value() isn't properly computed when first input cell value changes")
 	i2.SetValue(8)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 12, "c.Value() isn't properly computed when second input cell value changes")
 }
 
@@ -54,7 +56,9 @@ func TestCompute2Diamond(t *testing.T) {
 	c2 := r.CreateCompute1(i, func(v int) int { return v - 1 })
 	c3 := r.CreateCompute2(c1, c2, func(v1, v2 int) int { return v1 * v2 })
 	assertCellValue(t, c3, 0, "c3.Value() isn't properly computed based on initial input cell value")
+	time.Sleep(10 * time.Millisecond)
 	i.SetValue(3)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c3, 8, "c3.Value() isn't properly computed based on changed input cell value")
 }
 
