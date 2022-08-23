@@ -14,6 +14,7 @@ var _ Reactor = New()
 func assertCellValue(t *testing.T, c Cell, expected int, explanation string) {
 	observed := c.Value()
 	_, _, line, _ := runtime.Caller(1)
+	assert.Equal(t, expected, observed)
 	if observed != expected {
 		t.Fatalf("(from line %d) %s: expected %d, got %d", line, explanation, expected, observed)
 	}
@@ -43,10 +44,8 @@ func TestBasicCompute2(t *testing.T) {
 	c := r.CreateCompute2(i1, i2, func(v1, v2 int) int { return v1 | v2 })
 	assertCellValue(t, c, 3, "c.Value() isn't properly computed based on initial input cell values")
 	i1.SetValue(4)
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 6, "c.Value() isn't properly computed when first input cell value changes")
 	i2.SetValue(8)
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 12, "c.Value() isn't properly computed when second input cell value changes")
 }
 
@@ -58,6 +57,7 @@ func TestCompute2Diamond(t *testing.T) {
 	c3 := r.CreateCompute2(c1, c2, func(v1, v2 int) int { return v1 * v2 })
 	assertCellValue(t, c3, 0, "c3.Value() isn't properly computed based on initial input cell value")
 	i.SetValue(3)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c3, 8, "c3.Value() isn't properly computed based on changed input cell value")
 }
 
@@ -69,10 +69,8 @@ func TestCompute1Chain(t *testing.T) {
 		digitToAdd := i
 		c = r.CreateCompute1(c, func(v int) int { return v*10 + digitToAdd })
 	}
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 12345678, "c.Value() isn't properly computed based on initial input cell value")
 	inp.SetValue(9)
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 92345678, "c.Value() isn't properly computed based on changed input cell value")
 }
 
@@ -91,14 +89,12 @@ func TestCompute2Tree(t *testing.T) {
 	}
 
 	output := r.CreateCompute2(firstLevel[0], firstLevel[1], add)
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, output, 121, "output.Value() isn't properly computed based on initial input cell values")
 
 	for i := 0; i < 3; i++ {
 		ins[i].SetValue(ins[i].Value() * 2)
 	}
 
-	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, output, 242, "output.Value() isn't properly computed based on changed input cell values")
 }
 
@@ -159,8 +155,6 @@ func TestCallbackAddRemove(t *testing.T) {
 	})
 	i.SetValue(2)
 
-	time.Sleep(10 * time.Millisecond)
-
 	if len(observed1) != 1 || observed1[0] != 3 {
 		assert.Equal(t, []int{3}, observed1)
 		t.Fatalf("observed1 not properly called")
@@ -171,7 +165,7 @@ func TestCallbackAddRemove(t *testing.T) {
 	}
 	cb1.Cancel()
 	i.SetValue(3)
-	time.Sleep(10 * time.Millisecond)
+
 	if len(observed1) != 1 {
 		t.Fatalf("observed1 called after removal")
 	}
@@ -195,7 +189,6 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 	}
 
 	inp.SetValue(2)
-	time.Sleep(20 * time.Millisecond)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {
 			t.Fatalf("callback %d/%d should be called 1 time, was called %d times", i+1, numCallbacks, calls[i])
@@ -206,7 +199,6 @@ func TestMultipleCallbackRemoval(t *testing.T) {
 
 	fmt.Printf("setting value to 3\n")
 	inp.SetValue(3)
-	time.Sleep(20 * time.Millisecond)
 	spew.Dump(calls)
 	for i := 0; i < numCallbacks; i++ {
 		if calls[i] != 1 {

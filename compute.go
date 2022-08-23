@@ -29,15 +29,21 @@ func (c *Compute) SetValue(i int) {
 	c.value = i
 
 	if m, ok := c.sheet.deps[c]; ok {
-		if m.f1 != nil {
-			for i, target := range m.targets {
-				target.SetValue(m.f1(m.deps[i].Value()))
-			}
-		} else {
-			for i, target := range m.targets {
-				target.SetValue(m.f2(m.f2Deps[i][0].Value(), m.f2Deps[i][1].Value()))
+		for k := 0; k < len(m); k++ {
+			if m[k].f1 != nil {
+				for i, target := range m[k].targets {
+					target.SetValue(m[k].f1(m[k].deps[i].Value()))
+				}
+			} else {
+				for i, target := range m[k].targets {
+					target.SetValue(m[k].f2(m[k].f2Deps[i][0].Value(), m[k].f2Deps[i][1].Value()))
+				}
 			}
 		}
+	}
+
+	for _, cb := range c.callbacks {
+		cb.f(c.value)
 	}
 }
 

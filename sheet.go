@@ -5,7 +5,7 @@ var _ Reactor = &Sheet{}
 func New() *Sheet {
 	s := &Sheet{
 		ch:   make(chan Update),
-		deps: make(map[Cell]dependencies),
+		deps: make(map[Cell][]dependencies),
 	}
 
 	return s
@@ -15,7 +15,7 @@ type Sheet struct {
 	Inputs       []*Input
 	ComputeCells []*Compute
 
-	deps map[Cell]dependencies
+	deps map[Cell][]dependencies
 
 	ch chan Update
 	id int
@@ -52,11 +52,11 @@ func (s *Sheet) CreateCompute1(cell Cell, f func(int) int) ComputeCell {
 		cells:  []Cell{cell},
 	}
 
-	s.deps[cell] = dependencies{
+	s.deps[cell] = append(s.deps[cell], dependencies{
 		f1:      f,
 		targets: []Cell{compute},
 		deps:    []Cell{cell},
-	}
+	})
 
 	go compute.listen()
 
@@ -76,8 +76,8 @@ func (s *Sheet) CreateCompute2(cell Cell, cell2 Cell, f func(int, int) int) Comp
 		cells:  []Cell{cell, cell2},
 	}
 
-	s.deps[cell] = dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}}
-	s.deps[cell2] = dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}}
+	s.deps[cell] = append(s.deps[cell], dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}})
+	s.deps[cell2] = append(s.deps[cell2], dependencies{f2: f, targets: []Cell{compute}, f2Deps: [][]Cell{{cell, cell2}}})
 
 	go compute.listen()
 
