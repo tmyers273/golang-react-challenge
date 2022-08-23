@@ -1,30 +1,22 @@
 package react
 
-import (
-	"crypto/md5"
-	"encoding/binary"
-	"encoding/hex"
-)
+var _ InputCell = &input{}
 
-var _ InputCell = &Input{}
-
-type Input struct {
-	id        int
-	value     int
-	ch        chan<- Update
-	listeners []chan int
-	sheet     *Sheet
+type input struct {
+	id    int
+	value int
+	sheet *sheet
 }
 
-func (i *Input) GetId() int {
+func (i *input) GetId() int {
 	return i.id
 }
 
-func (i *Input) Value() int {
+func (i *input) Value() int {
 	return i.value
 }
 
-func (i *Input) SetValue(i2 int) {
+func (i *input) SetValue(i2 int) {
 	if i.value == i2 {
 		return
 	}
@@ -34,42 +26,29 @@ func (i *Input) SetValue(i2 int) {
 	fireDeps(i.sheet, i)
 }
 
-func hash(in []Cell) string {
-	out := make([]byte, len(in)*8)
-	for i := 0; i < len(in); i += 8 {
-		binary.LittleEndian.PutUint64(out[i:i+8], uint64(in[i].GetId()))
-	}
-
-	hashed := md5.Sum(out)
-	return hex.EncodeToString(hashed[:])
-}
-
-func fireDeps(sheet *Sheet, c Cell) {
-	// First "land" all the new values
+func fireDeps(sheet *sheet, cell Cell) {
 	var old int
-	changes := make(map[string]*Compute)
-	if m, ok := sheet.deps[c]; ok {
-		for k := 0; k < len(m); k++ {
-			if m[k].f1 != nil {
-				old = m[k].target.value
-				m[k].target.value = m[k].f1(m[k].f1Deps[0].Value())
 
-				if old != m[k].target.value {
-					changes[hash(m[k].f1Deps)] = m[k].target
-				}
-			} else {
-				old = m[k].target.value
-				m[k].target.value = m[k].f2(m[k].f2Deps[0].Value(), m[k].f2Deps[1].Value())
-				if old != m[k].target.value {
-					changes[hash(m[k].f1Deps)] = m[k].target
-				}
+	// First we "land" all the new values
+
+	changes := make(map[string]*compute)
+	// And keep track of any tuples of referentiality
+	// that change. This is used to dedupe the updates.
+	if depList, ok := sheet.deps[cell]; ok {
+		for _, dep := range depList {
+			old = dep.Target().value
+			dep.Target().value = dep.Calculate()
+
+			if old != dep.Target().value {
+				changes[dep.Hash()] = dep.Target()
 			}
 		}
 	}
 
-	// Then fire deps for anything that has changed
+	// Then fire deps for anything that has changed. Since we
+	// are pulling from a map and have hashed appropriately,
+	// this ensures we are only firing for each dependency once.
 	for _, c := range changes {
-
 		fireDeps(sheet, c)
 
 		for _, cb := range c.callbacks {

@@ -4,78 +4,57 @@ import (
 	"sync"
 )
 
-var _ ComputeCell = &Compute{}
+var _ ComputeCell = &compute{}
 
-type Compute struct {
-	id         int
-	value      int
-	f1         func(int) int
-	f2         func(int, int) int
-	inputs     []chan int
-	listeners  []chan int
-	cells      []Cell
-	callbacks  []Callback
-	mu         sync.Mutex
-	callbackId int
-	sheet      *Sheet
+type compute struct {
+	// id is guaranteed unique for all compute cells
+	id    int
+	value int
+	sheet *sheet
+
+	// callbacks is a slice of callback functions, with
+	// unique ids. The id is used to remove the callback.
+	//
+	// A map based (map[int]func(int)) may make more sense
+	// here if there is expected to be a lot of churn in
+	// the callbacks list.
+	callbacks []callback
+	mu        sync.Mutex
+
+	// Holds the value of the next callback id. Controlled
+	// via the mutex to ensure that the id is unique.
+	nextCallbackId int
 }
 
-func (c *Compute) SetValue(i int) {
-	if c.value == i {
-		return
-	}
-
-	c.value = i
-
-	fireDeps(c.sheet, c)
-}
-
-func (c *Compute) GetId() int {
+func (c *compute) GetId() int {
 	return c.id
 }
 
-func (c *Compute) Value() int {
+func (c *compute) Value() int {
 	return c.value
 }
 
-func (c *Compute) AddCallback(f func(int)) Canceler {
+func (c *compute) AddCallback(f func(int)) Canceler {
 	c.mu.Lock()
-	c.callbacks = append(c.callbacks, Callback{
+	c.callbacks = append(c.callbacks, callback{
 		f:  f,
-		id: c.callbackId,
+		id: c.nextCallbackId,
 	})
-	c.callbackId++
+	c.nextCallbackId++
 	c.mu.Unlock()
 
-	return NewCallbackRemover(len(c.callbacks)-1, c)
+	return newCallbackRemover(len(c.callbacks)-1, c)
 }
 
-func (c *Compute) remove(id int) {
+func (c *compute) removeCallback(id int) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	for i := 0; i < len(c.callbacks); i++ {
 		if c.callbacks[i].id == id {
 			c.callbacks = append(c.callbacks[:i], c.callbacks[i+1:]...)
-			return
+			break
 		}
 	}
-}
 
-type Callback struct {
-	id int
-	f  func(int)
-}
-
-func NewCallbackRemover(id int, c *Compute) Canceler {
-	return &CallbackRemover{id: id, c: c}
-}
-
-type CallbackRemover struct {
-	id int
-	c  *Compute
-}
-
-func (c *CallbackRemover) Cancel() {
-	c.c.remove(c.id)
+	c.mu.Unlock()
 }
