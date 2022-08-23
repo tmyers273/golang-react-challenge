@@ -70,8 +70,10 @@ func TestCompute1Chain(t *testing.T) {
 		digitToAdd := i
 		c = r.CreateCompute1(c, func(v int) int { return v*10 + digitToAdd })
 	}
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 12345678, "c.Value() isn't properly computed based on initial input cell value")
 	inp.SetValue(9)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, c, 92345678, "c.Value() isn't properly computed based on changed input cell value")
 }
 
@@ -90,12 +92,14 @@ func TestCompute2Tree(t *testing.T) {
 	}
 
 	output := r.CreateCompute2(firstLevel[0], firstLevel[1], add)
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, output, 121, "output.Value() isn't properly computed based on initial input cell values")
 
 	for i := 0; i < 3; i++ {
 		ins[i].SetValue(ins[i].Value() * 2)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	assertCellValue(t, output, 242, "output.Value() isn't properly computed based on changed input cell values")
 }
 

@@ -10,13 +10,22 @@ type Compute struct {
 	inputs    []chan int
 	listeners []chan int
 	cells     []Cell
+	callback  func(int)
 }
 
 func (c *Compute) SetValue(i int) {
+	if c.value == i {
+		return
+	}
+
 	c.value = i
 
 	for _, ch := range c.listeners {
 		ch <- c.value
+	}
+
+	if c.callback != nil {
+		c.callback(c.value)
 	}
 }
 
@@ -55,6 +64,11 @@ func (c *Compute) RegisterListener() chan int {
 }
 
 func (c *Compute) AddCallback(f func(int)) Canceler {
-	//TODO implement me
-	panic("implement me")
+	c.callback = f
+
+	return &DummyCanceler{}
 }
+
+type DummyCanceler struct{}
+
+func (c *DummyCanceler) Cancel() {}

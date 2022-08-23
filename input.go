@@ -25,6 +25,10 @@ func (i *Input) Value() int {
 }
 
 func (i *Input) SetValue(i2 int) {
+	if i.value == i2 {
+		return
+	}
+
 	i.value = i2
 
 	for _, c := range i.listeners {
